@@ -6,6 +6,7 @@
 package main;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.JOptionPane;
@@ -21,10 +22,17 @@ public class ManageData extends javax.swing.JDialog {
      * Creates new form ManageData
      */
     Connection koneksi;
-    public ManageData(java.awt.Frame parent, boolean modal) {
+    String action;
+    public ManageData(java.awt.Frame parent, boolean modal, String act, String nis) {
         super(parent, modal);
         initComponents();
         koneksi = DatabaseConnection.getKoneksi("localhost", "3306", "root", "", "db_sekolah");
+        
+        action = act;
+        if (action.equals("Edit")){
+            txtNis.setEnabled(false);
+            showData(nis);
+        }
     }
 
     ManageData(DataSiswa aThis, boolean b, String tambah, String string) {
@@ -154,7 +162,8 @@ public class ManageData extends javax.swing.JDialog {
 
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
         // TODO add your handling code here:
-        simpanData();
+        if (action.equals("Edit")) editData();
+        else simpanData();
     }//GEN-LAST:event_btnSimpanActionPerformed
 
     /**
@@ -184,19 +193,7 @@ public class ManageData extends javax.swing.JDialog {
         }
         //</editor-fold>
 
-        /* Create and display the dialog */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                ManageData dialog = new ManageData(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
-        });
+       
     }
     
     public void simpanData(){
@@ -219,6 +216,48 @@ public class ManageData extends javax.swing.JDialog {
         } catch (SQLException ex){
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Terjadi Kesalahan Pada Database");
+        }
+    }
+    
+    void showData(String nis){
+        try {
+            Statement stmt = koneksi.createStatement();
+            String query = "SELECT * FROM t_siswa WHERE nis = " + nis + ";";
+            ResultSet rs = stmt.executeQuery(query);
+            rs.first();
+            
+            txtNis.setText(rs.getString("nis"));
+            txtNama.setText(rs.getString("nama"));
+            cmbKelas.setSelectedItem(rs.getString("kelas"));
+            cmbJurusan.setSelectedItem(rs.getString("jurusan"));
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Terjadi kesalahan di Query");
+        }
+    }
+    
+     public void editData(){
+        String nis = txtNis.getText();
+        String nama = txtNama.getText();
+        String kelas = cmbKelas.getSelectedItem().toString();
+        String jurusan = cmbJurusan.getSelectedItem().toString();
+        
+        try{
+            Statement stmt = koneksi.createStatement();
+            String query = "UPDATE t_siswa SET nama = '" + nama +"',"
+                            + "kelas = '" + kelas +"',"
+                            + "jurusan = '" + jurusan + "' WHERE nis = '" + nis +"';";
+            
+            System.out.println(query);
+            int berhasil = stmt.executeUpdate(query);
+            if (berhasil == 1){
+                JOptionPane.showMessageDialog(null, "Data Berhasil Diubah");
+            } else {
+                JOptionPane.showMessageDialog(null, "Data Gagal Diubah");
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Terjadi Kesalahan Pada Query");
         }
     }
 
